@@ -1,114 +1,183 @@
 import mockStore from './mockData.js';
 
-const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4001';
+// Configuración del toggle basado en variable de entorno
+const API_BASE_URL = import.meta.env.VITE_API_BASE;
+const USE_BACKEND = !!API_BASE_URL;
 
-// Función para verificar si el backend está disponible
-async function isBackendAvailable() {
-  try {
-    const response = await fetch(`${BASE}/api/servicios`, { 
-      method: 'HEAD',
-      signal: AbortSignal.timeout(2000) // Timeout de 2 segundos
-    });
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
+// Función para determinar si usar backend o mock
+function shouldUseBackend() {
+  return USE_BACKEND;
 }
 
-// API híbrida: intenta backend primero, fallback a datos simulados
-export async function getServicios(){
-  try {
-    if (await isBackendAvailable()) {
-      const res = await fetch(`${BASE}/api/servicios`);
-      if (res.ok) {
-        return await res.json();
-      }
-    }
-  } catch (error) {
-    console.warn('Backend no disponible, usando datos simulados:', error.message);
+
+
+function getAuthHeaders() {
+  if (typeof window === 'undefined') return {};
+  const token = localStorage.getItem('cf_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+// Función para hacer peticiones al backend
+async function fetchFromBackend(endpoint, options = {}) {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...getAuthHeaders(),
+    ...(options.headers || {})
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error ${response.status}: ${response.statusText}`);
   }
-  
-  // Fallback a datos simulados
+
+  return await response.json();
+}
+
+// ===== INTERFAZ UNIFICADA =====
+
+// Servicios
+export async function getServicios() {
+  if (shouldUseBackend()) {
+    try {
+      return await fetchFromBackend('/api/servicios');
+    } catch (error) {
+      console.warn('Error conectando al backend, usando datos simulados:', error.message);
+      return await mockStore.getServicios();
+    }
+  }
   return await mockStore.getServicios();
 }
 
-export async function getRegistros(){
-  try {
-    if (await isBackendAvailable()) {
-      const res = await fetch(`${BASE}/api/registros`);
-      if (res.ok) {
-        return await res.json();
-      }
-    }
-  } catch (error) {
-    console.warn('Backend no disponible, usando datos simulados:', error.message);
-  }
-  
-  // Fallback a datos simulados
-  return await mockStore.getRegistros();
-}
-
-export async function crearRegistro(payload){
-  try {
-    if (await isBackendAvailable()) {
-      const res = await fetch(`${BASE}/api/registros`, { 
-        method:'POST', 
-        headers:{'Content-Type':'application/json'}, 
-        body: JSON.stringify(payload) 
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-    }
-  } catch (error) {
-    console.warn('Backend no disponible, usando datos simulados:', error.message);
-  }
-  
-  // Fallback a datos simulados
-  return await mockStore.createRegistro(payload);
-}
-
-export async function eliminarRegistro(id){
-  try {
-    if (await isBackendAvailable()) {
-      const res = await fetch(`${BASE}/api/registros/${id}`, { method:'DELETE' });
-      if (res.ok) {
-        return await res.json();
-      }
-    }
-  } catch (error) {
-    console.warn('Backend no disponible, usando datos simulados:', error.message);
-  }
-  
-  // Fallback a datos simulados
-  return await mockStore.deleteRegistro(id);
-}
-
-// Funciones adicionales para datos simulados
 export async function getServicioById(id) {
+  if (shouldUseBackend()) {
+    try {
+      return await fetchFromBackend(`/api/servicios/${id}`);
+    } catch (error) {
+      console.warn('Error conectando al backend, usando datos simulados:', error.message);
+      return await mockStore.getServicioById(id);
+    }
+  }
   return await mockStore.getServicioById(id);
 }
 
 export async function createServicio(servicio) {
+  if (shouldUseBackend()) {
+    try {
+      return await fetchFromBackend('/api/servicios', {
+        method: 'POST',
+        body: JSON.stringify(servicio)
+      });
+    } catch (error) {
+      console.warn('Error conectando al backend, usando datos simulados:', error.message);
+      return await mockStore.createServicio(servicio);
+    }
+  }
   return await mockStore.createServicio(servicio);
 }
 
 export async function updateServicio(id, updates) {
+  if (shouldUseBackend()) {
+    try {
+      return await fetchFromBackend(`/api/servicios/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      });
+    } catch (error) {
+      console.warn('Error conectando al backend, usando datos simulados:', error.message);
+      return await mockStore.updateServicio(id, updates);
+    }
+  }
   return await mockStore.updateServicio(id, updates);
 }
 
 export async function deleteServicio(id) {
+  if (shouldUseBackend()) {
+    try {
+      return await fetchFromBackend(`/api/servicios/${id}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.warn('Error conectando al backend, usando datos simulados:', error.message);
+      return await mockStore.deleteServicio(id);
+    }
+  }
   return await mockStore.deleteServicio(id);
 }
 
+// Registros
+export async function getRegistros() {
+  if (shouldUseBackend()) {
+    try {
+      return await fetchFromBackend('/api/registros');
+    } catch (error) {
+      console.warn('Error conectando al backend, usando datos simulados:', error.message);
+      return await mockStore.getRegistros();
+    }
+  }
+  return await mockStore.getRegistros();
+}
+
 export async function getRegistroById(id) {
+  if (shouldUseBackend()) {
+    try {
+      return await fetchFromBackend(`/api/registros/${id}`);
+    } catch (error) {
+      console.warn('Error conectando al backend, usando datos simulados:', error.message);
+      return await mockStore.getRegistroById(id);
+    }
+  }
   return await mockStore.getRegistroById(id);
 }
 
+export async function crearRegistro(registro) {
+  if (shouldUseBackend()) {
+    try {
+      return await fetchFromBackend('/api/registros', {
+        method: 'POST',
+        body: JSON.stringify(registro)
+      });
+    } catch (error) {
+      console.warn('Error conectando al backend, usando datos simulados:', error.message);
+      return await mockStore.createRegistro(registro);
+    }
+  }
+  return await mockStore.createRegistro(registro);
+}
+
 export async function updateRegistro(id, updates) {
+  if (shouldUseBackend()) {
+    try {
+      return await fetchFromBackend(`/api/registros/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      });
+    } catch (error) {
+      console.warn('Error conectando al backend, usando datos simulados:', error.message);
+      return await mockStore.updateRegistro(id, updates);
+    }
+  }
   return await mockStore.updateRegistro(id, updates);
 }
 
+export async function eliminarRegistro(id) {
+  if (shouldUseBackend()) {
+    try {
+      return await fetchFromBackend(`/api/registros/${id}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.warn('Error conectando al backend, usando datos simulados:', error.message);
+      return await mockStore.deleteRegistro(id);
+    }
+  }
+  return await mockStore.deleteRegistro(id);
+}
+
+// Funciones específicas de mock (no disponibles en backend)
 export async function getRegistrosByServicio(servicioId) {
   return await mockStore.getRegistrosByServicio(servicioId);
 }
@@ -120,3 +189,26 @@ export async function getRegistrosByDateRange(fechaInicio, fechaFin) {
 export async function resetMockData() {
   return await mockStore.resetData();
 }
+
+export async function login(email, password) {
+  if (!shouldUseBackend()) {
+    throw new Error('Login solo disponible cuando VITE_API_BASE está configurado');
+  }
+
+  return await fetchFromBackend('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password })
+  });
+}
+
+export async function register(nombre, email, password) {
+  if (!shouldUseBackend()) {
+    throw new Error('Registro solo disponible cuando VITE_API_BASE está configurado');
+  }
+
+  return await fetchFromBackend('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ nombre, email, password })
+  });
+}
+

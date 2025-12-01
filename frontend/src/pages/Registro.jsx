@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { getServicios, crearRegistro } from '../lib/api.js';
 
 export default function Registro(){
+  const location = useLocation();
   const [servicios, setServicios] = useState([]);
   const [form, setForm] = useState({
     dueno:'', email:'', telefono:'',
@@ -15,7 +17,20 @@ export default function Registro(){
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fmt = useMemo(()=> new Intl.NumberFormat('es-CL'), []);
 
-  useEffect(()=>{ (async()=> setServicios(await getServicios()))(); }, []);
+  useEffect(()=>{ 
+    (async()=> {
+      const serviciosData = await getServicios();
+      setServicios(serviciosData);
+      
+      // Si viene un servicioId desde el state, seleccionarlo automáticamente
+      if (location.state?.servicioId) {
+        const servicioId = location.state.servicioId;
+        if (serviciosData.find(s => s.id === servicioId)) {
+          setForm(prev => ({ ...prev, servicio_id: servicioId }));
+        }
+      }
+    })();
+  }, [location.state]);
 
   useEffect(()=>{
     if(!form.servicio_id || !form.ingreso || !form.salida) return;

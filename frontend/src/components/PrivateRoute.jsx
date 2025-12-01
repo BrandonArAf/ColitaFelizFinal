@@ -1,0 +1,20 @@
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
+
+export default function PrivateRoute({ children, roles }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <p>Cargando sesión...</p>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (roles && !roles.includes(user.rol)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
