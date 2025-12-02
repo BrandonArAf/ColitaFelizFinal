@@ -4,8 +4,8 @@ import { authRequired, requireRole } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
-// Solo ADMINISTRADOR puede ver y gestionar registros
-router.get('/', authRequired, requireRole('ADMINISTRADOR'), registroController.list);
+// Lectura para ADMINISTRADOR y VENDEDOR; gestion reservada a ADMINISTRADOR
+router.get('/', authRequired, requireRole(['ADMINISTRADOR', 'VENDEDOR']), registroController.list);
 router.post('/', authRequired, requireRole('ADMINISTRADOR'), registroController.create);
 router.delete('/:id', authRequired, requireRole('ADMINISTRADOR'), registroController.delete);
 

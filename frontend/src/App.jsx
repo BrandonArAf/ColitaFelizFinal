@@ -29,7 +29,7 @@ export default function App(){
             <Route
               path="/admin"
               element={
-                <PrivateRoute roles={['ADMINISTRADOR']}>
+                <PrivateRoute roles={['ADMINISTRADOR', 'VENDEDOR']}>
                   <Admin />
                 </PrivateRoute>
               }

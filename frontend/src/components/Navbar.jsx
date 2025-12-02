@@ -135,7 +135,7 @@ export default function Navbar(){
               </NavLink>
             </li>
 
-            {user?.rol === 'ADMINISTRADOR' && (
+            {(user?.rol === 'ADMINISTRADOR' || user?.rol === 'VENDEDOR') && (
               <li className="nav-item">
                 <NavLink 
                   className="nav-link fw-semibold px-3" 

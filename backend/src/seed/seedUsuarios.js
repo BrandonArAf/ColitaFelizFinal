@@ -10,6 +10,12 @@ const usuarios = [
     rol: 'ADMINISTRADOR'
   },
   {
+    nombre: 'Cliente Demo',
+    email: 'cliente@colitafeliz.com',
+    password: 'cliente123',
+    rol: 'CLIENTE'
+  },
+  {
     nombre: 'Vendedor',
     email: 'vendedor@colitafeliz.com',
     password: 'vendedor123',

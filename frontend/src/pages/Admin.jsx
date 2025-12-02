@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getRegistros, eliminarRegistro, resetMockData, getServicios } from '../lib/api.js';
 import ServicioManager from '../components/ServicioManager.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Admin(){
   const [items, setItems] = useState([]);
@@ -12,11 +13,20 @@ export default function Admin(){
   const [sortBy, setSortBy] = useState('id');
   const [sortOrder, setSortOrder] = useState('asc');
   const [activeTab, setActiveTab] = useState('registros');
+  const { user } = useAuth();
+
+  const isAdmin = user?.rol === 'ADMINISTRADOR';
 
   useEffect(()=>{ 
     loadRegistros();
     loadServicios();
   }, []);
+
+  useEffect(() => {
+    if (!isAdmin && activeTab !== 'registros') {
+      setActiveTab('registros');
+    }
+  }, [isAdmin, activeTab]);
 
   const loadServicios = async () => {
     try {
@@ -289,6 +299,7 @@ export default function Admin(){
 
   const totalRevenue = items.reduce((sum, item) => sum + (item.total || 0), 0);
   const totalRegistros = items.length;
+  const columnsCount = isAdmin ? 13 : 12;
 
   if (loading) {
     return (
@@ -318,16 +329,18 @@ export default function Admin(){
                   <p className="mb-0 opacity-75">Gestión completa del sistema</p>
                 </div>
                 <div className="col-auto">
-                  <button 
-                    className="btn btn-warning me-2" 
-                    onClick={handleResetData}
-                    title="Resetear datos a estado inicial"
-                  >
-                    <i className="fas fa-undo me-2"></i>
-                    Resetear Datos
-                  </button>
                   {activeTab === 'registros' && (
                     <>
+                      {isAdmin && (
+                        <button 
+                          className="btn btn-warning me-2" 
+                          onClick={handleResetData}
+                          title="Resetear datos a estado inicial"
+                        >
+                          <i className="fas fa-undo me-2"></i>
+                          Resetear Datos
+                        </button>
+                      )}
                       <button 
                         className="btn btn-success me-2" 
                         onClick={exportToExcel}
@@ -371,15 +384,17 @@ export default function Admin(){
                     Registros
                   </button>
                 </li>
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link ${activeTab === 'servicios' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('servicios')}
-                  >
-                    <i className="fas fa-cogs me-2"></i>
-                    Servicios
-                  </button>
-                </li>
+                {isAdmin && (
+                  <li className="nav-item">
+                    <button 
+                      className={`nav-link ${activeTab === 'servicios' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('servicios')}
+                    >
+                      <i className="fas fa-cogs me-2"></i>
+                      Servicios
+                    </button>
+                  </li>
+                )}
               </ul>
             </div>
             
@@ -475,13 +490,13 @@ export default function Admin(){
                       <th>Salida</th>
                       <th>Días</th>
                       <th>Total</th>
-                      <th>Acciones</th>
+                      {isAdmin && <th>Acciones</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredItems.length === 0 ? (
                       <tr>
-                        <td colSpan="13" className="text-center py-4">
+                        <td colSpan={columnsCount} className="text-center py-4">
                           <i className="fas fa-inbox fa-3x text-muted mb-3"></i>
                           <p className="text-muted">No se encontraron registros</p>
                         </td>
@@ -501,15 +516,17 @@ export default function Admin(){
                           <td>{new Date(r.salida).toLocaleDateString('es-CL')}</td>
                           <td><span className="badge bg-warning">{r.dias} días</span></td>
                           <td className="fw-bold text-success">${new Intl.NumberFormat('es-CL').format(r.total)}</td>
-                          <td>
-                            <button 
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleDelete(r)}
-                              title="Eliminar registro"
-                            >
-                              <i className="fas fa-trash"></i>
-                            </button>
-                          </td>
+                          {isAdmin && (
+                            <td>
+                              <button 
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleDelete(r)}
+                                title="Eliminar registro"
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       ))
                     )}
